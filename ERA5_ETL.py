@@ -10,8 +10,13 @@
 # MAGIC * Write to a queriable databricks table and parquet file. 
 # MAGIC * Test if the table is queriable on the H3 Index
 # MAGIC 
-# MAGIC #### Parameters 
-# MAGIC * date: date of the precipitation file to use. 
+# MAGIC #### Input
+# MAGIC * Precipitation data available from s3://era5-pds/YYYY/MM/data/precipitation_amount_1hour_Accumulation.nc
+# MAGIC * Date (YYYY/MM) of the precipitation file to extract.
+# MAGIC 
+# MAGIC #### Output
+# MAGIC * Parquet file (optional)
+# MAGIC * Databricks (parquet) table 
 
 # COMMAND ----------
 
@@ -224,7 +229,45 @@ test_dataframe_queriable(df, "h3_9")
 
 # COMMAND ----------
 
-# MAGIC %md ##### Queries against the data 
+# MAGIC %md #### Query
+
+# COMMAND ----------
+
+# MAGIC %md ##### Top 5 H3 Indexes by Precipitation 
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC 
+# MAGIC SELECT 
+# MAGIC     h3_9,
+# MAGIC     SUM(precipitation_amount_1hour_Accumulation) as total_precipitation
+# MAGIC FROM 
+# MAGIC     default.precipitation_1_hour_2022_05 
+# MAGIC GROUP BY 
+# MAGIC     h3_9
+# MAGIC ORDER BY 
+# MAGIC     total_precipitation DESC
+# MAGIC LIMIT 5;
+
+# COMMAND ----------
+
+# MAGIC %md ##### Query daily precipitation 
+
+# COMMAND ----------
+
+# MAGIC %sql 
+# MAGIC 
+# MAGIC SELECT 
+# MAGIC     DAY(time1_bounds) as day, 
+# MAGIC     AVG(precipitation_amount_1hour_Accumulation) as avg_precipitation
+# MAGIC FROM 
+# MAGIC     default.precipitation_1_hour_2022_05 
+# MAGIC GROUP BY 
+# MAGIC     DAY(time1_bounds)
+# MAGIC ORDER BY 
+# MAGIC     day;
+# MAGIC     
 
 # COMMAND ----------
 
@@ -237,3 +280,7 @@ test_dataframe_queriable(df, "h3_9")
 # MAGIC %sql
 # MAGIC 
 # MAGIC select count(*) as records from default.precipitation_1_hour_2022_05
+
+# COMMAND ----------
+
+
