@@ -35,6 +35,7 @@ import boto3
 import botocore
 import datetime
 import sparkxarray as xr
+import h3
 import h3_pyspark
 from pyspark.sql import SparkSession
 from pyspark.sql import types as T
@@ -53,6 +54,10 @@ dbutils.widgets.text(
     "date", "2022/05", "1. Select date for file in YYYY/MM format"
 )
 date = getArgument("date")
+
+# COMMAND ----------
+
+# MAGIC %md #### Extract
 
 # COMMAND ----------
 
@@ -103,7 +108,7 @@ rdd_dict = rdd_pandas_df.map(lambda df: df.to_dict(orient='records'))
 # COMMAND ----------
 
 # MAGIC %md ##### Convert the RDD of dictionaries to an RDD of Row objects
-# MAGIC Handle the pandas date time here
+# MAGIC Handle the pandas date time here to enable pyspark df creation
 
 # COMMAND ----------
 
@@ -128,6 +133,10 @@ df = spark.createDataFrame(rdd_rows, schema)
 
 # COMMAND ----------
 
+# MAGIC %md #### Transform
+
+# COMMAND ----------
+
 # MAGIC %md ##### Add H3 index
 
 # COMMAND ----------
@@ -137,16 +146,25 @@ df = df.withColumn('h3_9', h3_pyspark.geo_to_h3('lat', 'lon', 'resolution'))
 
 # COMMAND ----------
 
-# MAGIC %md ##### Write Parquet
+# MAGIC %md #### Load
 
 # COMMAND ----------
 
-# df = df.limit(1)
 table_name = 'precipitation_1_hour_2022_05'
 
 # COMMAND ----------
 
-# df.write.mode("overwrite").parquet(f'{table_name}.parquet')
+# MAGIC %md ##### Write Parquet
+# MAGIC Optionally write to parquet file - this could be to an S3 mount if wanting to use an additional tool like S3 select to manipulate the data.
+
+# COMMAND ----------
+
+write_parquet: = False
+
+# COMMAND ----------
+
+if write_parquet:
+    df.write.mode("overwrite").parquet(f'{table_name}.parquet')
 
 # COMMAND ----------
 
@@ -159,45 +177,58 @@ print(f"Wrote to default.{table_name }")
 
 # COMMAND ----------
 
+# MAGIC %md #### Tests
+
+# COMMAND ----------
+
 # MAGIC %md ##### Create and run a test to see if table is queriable on the h3 index 
+# MAGIC 
+# MAGIC * Check if the column exists in the dataframe.
+# MAGIC * The column has data.
+# MAGIC * The column is a string (hashed index).
+# MAGIC * The H3 index column is valid.
 
 # COMMAND ----------
 
 def test_dataframe_queriable(df, h3_index_column):
     try:
-        # check if the column exists
         if h3_index_column not in df.columns:
             raise ValueError(f"{h3_index_column} column not found in the dataframe")
-            
-        # check if the column is not empty
+
         if df.filter(df[h3_index_column].isNotNull()).count() == 0:
             raise ValueError(f"{h3_index_column} column is empty")
-            
-        # check if the column is of type string
+
         if df.select(h3_index_column).dtypes[0][1] != "string":
             raise ValueError(f"{h3_index_column} column is not of type string")
-            
-        # check if the h3 index column is valid
-        import h3
-        h3_indexes = df.select(h3_index_column).distinct().rdd.flatMap(lambda x: x).collect()
+
+        h3_indexes = (
+            df.select(h3_index_column).distinct().rdd.flatMap(lambda x: x).collect()
+        )
         for h3_index in h3_indexes:
             if not h3.h3_is_valid(h3_index):
                 raise ValueError(f"{h3_index} is not a valid h3 index")
         print(f"Dataframe is queriable based on {h3_index_column} column")
+
         return True
-    
+
     except Exception as e:
-        print(f"Dataframe is not queriable based on the {h3_index_column} column: {str(e)}")
+        print(
+            f"Dataframe is not queriable based on the {h3_index_column} column: {str(e)}"
+        )
         return False
 
 
 df = spark.sql(f"select * from default.{table_name} limit 10")
 test_dataframe_queriable(df, "h3_9")
 
+
+# COMMAND ----------
+
+# MAGIC %md ##### Queries against the data 
+
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC 
 # MAGIC select * from default.precipitation_1_hour_2022_05
 # MAGIC where time1_bounds > '2022-04-30'
 
@@ -205,4 +236,4 @@ test_dataframe_queriable(df, "h3_9")
 
 # MAGIC %sql
 # MAGIC 
-# MAGIC select count(*) from default.precipitation_1_hour_2022_05
+# MAGIC select count(*) as records from default.precipitation_1_hour_2022_05
