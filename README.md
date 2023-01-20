@@ -36,13 +36,13 @@ The notebook installs the necessary libraries via pip. If the libraries are prel
 
 This notebook can fit within a databricks workflow to run the data regularly as new data becomes available. 
 
-### Additional Context
+## Additional Context
 
-#### ERA5
+### ERA5
 
 [ERA5](https://www.ecmwf.int/en/forecasts/datasets/reanalysis-datasets/era5) is a global reanalysis dataset produced by the European Centre for Medium-Range Weather Forecasts (ECMWF). It provides a consistent and accurate dataset of weather and climate variables from 1979 to present, with a horizontal resolution of approximately 31 km. The dataset includes information on temperature, precipitation, wind, and other atmospheric variables, which makes it a valuable resource for a wide range of applications including weather forecasting, climate research, and air quality studies. 
 
-#### Converting to queriable format
+### Converting to queriable format
 
 NetCDF (Network Common Data Form) is convenient when storing large scientific multi-dimensional datasets however it is less than optimal when it comes to querying and analysing data. This is due to a number of reasons including its hierarchical formatting, binary format and complex meta data. Hence converting to a more queriable format is preferable. Parquet offers an effective alternative as a columnar storage format that is specifically designed to be queried and analyzed using SQL-based tools. It is optimized for reading and writing large datasets and allows for efficient compression and encoding of data, making it a more efficient storage format.
 
