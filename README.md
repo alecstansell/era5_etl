@@ -4,7 +4,7 @@
 ## Intro
 
 
-This repository contains a notebook that extracts NetCDF hourly precipitation data from ERA5, adds an H3 index and converts to a queriable parquet format. 
+This repository contains a notebook that extracts NetCDF hourly precipitation data from ERA5, converts to queriable parquet format, adds an H3 index, runs tests for queriability and includes some sample queries. 
 
 
 ## Setup
@@ -22,23 +22,21 @@ The notebook does the following:
 * Adds an H3 index using h3-spark.
 * Writes the data to a queriable databricks table and parquet file.
 * Tests if the table is queriable on the H3 Index
-* The notebook takes in one parameter, the date of the precipitation file to use in the format YYYY/MM.
+* Runs sample queries against the data.
+
 
 ## Libaries 
 
 
 The notebook uses the following libraries: boto3, botocore, spark-xarray, h3-pyspark, pyspark.sql. 
 
-The notebook also installs the necessary libraries via pip. If the libraries are preloaded on the cluster, this step can be skipped.
-
+The notebook installs the necessary libraries via pip. If the libraries are preloaded on the cluster, this step can be skipped.
 
 ## Automation 
 
 This notebook can fit within a databricks workflow to run the data regularly as new data becomes available. 
 
-
 ### Additional Context
-
 
 #### ERA5
 
