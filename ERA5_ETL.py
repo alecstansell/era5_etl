@@ -271,16 +271,10 @@ test_dataframe_queriable(df, "h3_9")
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC select * from default.precipitation_1_hour_2022_05
-# MAGIC where time1_bounds > '2022-04-30'
+# MAGIC %md ##### Record count
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC 
 # MAGIC select count(*) as records from default.precipitation_1_hour_2022_05
-
-# COMMAND ----------
-
-
